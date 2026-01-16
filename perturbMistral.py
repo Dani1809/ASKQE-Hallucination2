@@ -144,24 +144,32 @@ def main():
     )
     args = parser.parse_args()
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"[INFO] Using device: {device}")
 
-    # =========================
-    # TOKENIZER & MODEL
-    # =========================
+    if not os.path.isfile(args.input_path):
+        print("[FATAL] Input file does not exist.")
+        return
+
+    output_dir = os.path.dirname(args.output_path)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+        print(f"[DEBUG] Output directory ready: {output_dir}")
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     tokenizer = AutoTokenizer.from_pretrained(model_id)
+
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
+        print("[DEBUG] pad_token was None → set to eos_token")
 
+   
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
         torch_dtype=torch.bfloat16 if device.type == "cuda" else torch.float32,
-        device_map="auto"
+        device_map="auto",
+        low_cpu_mem_usage=True
     )
     model.eval()
-
-    os.makedirs(os.path.dirname(args.output_path), exist_ok=True)
 
     # =========================
     # PROCESS FILES
@@ -169,55 +177,66 @@ def main():
     with open(args.input_path, "r", encoding="utf-8") as f_in, \
          open(args.output_path, "a", encoding="utf-8") as f_out:
 
-        for line in f_in:
-            data = json.loads(line)
-            sent_id = data.get("id")
+        for line_idx, line in enumerate(f_in, start=1):
 
-            # skip already perturbed
+            try:
+                data = json.loads(line)
+            except Exception as e:
+                print(f"[ERROR] Line {line_idx} is not valid JSON: {e}")
+                continue
+
+          
+            sent_id = data.get("id", f"line_{line_idx}")
+
             already_done = any(
                 k.startswith("pert_mt") and args.perturbation_type in k
                 for k in data.keys()
             )
             if already_done:
+                print(f"[DEBUG] {sent_id} already perturbed → SKIP")
                 continue
 
-            mt_fields = [k for k in data.keys() if re.fullmatch(r"mt\d+", k)]
-            if not mt_fields:
+            sentence = data.get("mt")
+            if not sentence:
+                print(f"[WARNING] No 'mt' field found for {sent_id} → SKIP")
                 continue
 
-            for mt_field in mt_fields:
-                sentence = data.get(mt_field)
-                if not sentence:
-                    continue
+            mt_field = "mt"
+            sentence = data.get(mt_field)
 
-                prompt = (
-                    PERTURBATION_PROMPTS[args.perturbation_type]
-                    .replace("{{sentence}}", sentence)
+            if not sentence:
+                print(f"[WARNING] Empty sentence in {mt_field} → SKIP")
+                continue
+            prompt = (
+                PERTURBATION_PROMPTS[args.perturbation_type]
+                .replace("{{sentence}}", sentence)
+            )
+
+            messages = [
+                {"role": "system", "content": "Sei un assistente utile."},
+                {"role": "user", "content": prompt}
+            ]
+
+            inputs = tokenizer.apply_chat_template(
+                messages,
+                add_generation_prompt=True,
+                return_tensors="pt",
+                padding=True
+            ).to(device)
+
+            print(f"[DEBUG] Input tokens shape: {inputs.shape}")
+
+            with torch.no_grad():
+                outputs = model.generate(
+                    input_ids=inputs,
+                    attention_mask=(inputs != tokenizer.pad_token_id),
+                    max_new_tokens=200,
+                    eos_token_id=tokenizer.eos_token_id,
+                    pad_token_id=tokenizer.pad_token_id,
+                    do_sample=True,
+                    temperature=0.25,
+                    top_p=0.85
                 )
-
-                messages = [
-                    {"role": "system", "content": "Sei un assistente utile."},
-                    {"role": "user", "content": prompt}
-                ]
-
-                inputs = tokenizer.apply_chat_template(
-                    messages,
-                    add_generation_prompt=True,
-                    return_tensors="pt",
-                    padding=True
-                ).to(device)
-
-                with torch.no_grad():
-                    outputs = model.generate(
-                        input_ids=inputs,
-                        attention_mask=(inputs != tokenizer.pad_token_id),
-                        max_new_tokens=200,
-                        eos_token_id=tokenizer.eos_token_id,
-                        pad_token_id=tokenizer.pad_token_id,
-                        do_sample=True,
-                        temperature=0.25,
-                        top_p=0.85
-                    )
 
                 response = outputs[0][inputs.shape[-1]:]
                 generated_text = tokenizer.decode(
@@ -225,14 +244,15 @@ def main():
                     skip_special_tokens=True
                 ).strip()
 
-                out_field = f"pert_{mt_field}"
+                out_field = f"pert_mt"
                 data[out_field] = generated_text
-
+  
                 print(f"[OK] {sent_id} | {out_field}")
                 print(generated_text)
                 print("-" * 80)
 
             f_out.write(json.dumps(data, ensure_ascii=False) + "\n")
+
 
 
 if __name__ == "__main__":
