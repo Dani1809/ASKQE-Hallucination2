@@ -13,6 +13,7 @@ import json
 import argparse
 import re
 from transformers import AutoTokenizer, AutoModelForCausalLM
+import difflib
 
 # =========================
 # MODEL
@@ -129,6 +130,26 @@ Return ONLY the modified sentence.
 """
 }
 
+
+def trova_differenza(frase_a, frase_b):
+    parole_a = frase_a.split()
+    parole_b = frase_b.split()
+    
+    # Rimuovi punteggiatura per confronto più accurato
+    def pulisci_parola(parola):
+        return parola.strip('.,;:!?').lower()
+    
+    parole_a_pulite = set(pulisci_parola(p) for p in parole_a)
+    
+    # Trova parole in B che non esistono in A (anche senza punteggiatura)
+    nuove_parole = []
+    for parola in parole_b:
+        parola_pulita = pulisci_parola(parola)
+        if parola_pulita and parola_pulita not in parole_a_pulite:
+            nuove_parole.append(parola)
+    
+    return ' '.join(nuove_parole)
+
 # =========================
 # MAIN
 # =========================
@@ -244,11 +265,14 @@ def main():
                     skip_special_tokens=True
                 ).strip()
 
-                out_field = f"pert_mt"
+                out_field = "pert_mt"
                 data[out_field] = generated_text
-  
+
+                data["new"] = trova_differenza(sentence,generated_text)
+
                 print(f"[OK] {sent_id} | {out_field}")
                 print(generated_text)
+                print(f"[NEW] {data['new']}")
                 print("-" * 80)
 
             f_out.write(json.dumps(data, ensure_ascii=False) + "\n")
