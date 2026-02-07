@@ -191,6 +191,14 @@ def main():
                         text=src,
                         question=next_q
                     )
+                    followup_response_bt = generate_response(
+                        tokenizer,
+                        model,
+                        qa_prompt,
+                        text=bt,
+                        question=next_q
+                    )
+
 
                     # Add current question-answer pair with the follow-up question and its response
                     if next_q.endswith("?"):
@@ -199,7 +207,8 @@ def main():
                             "question": q,
                             "answer_src": a,
                             "follow_up_question": next_q,
-                            "follow_up_response": followup_response  # Same response from previous turn
+                            "follow_up_response": followup_response,  # Same response from previous turn
+                            "follow_up_response_bt": followup_response_bt
                         })
 
                     if args.debug:
@@ -208,6 +217,7 @@ def main():
                         print(f"  A_SRC: {a}")
                         print(f"  Follow-Up Q: {next_q}")
                         print(f"  Follow-Up Response: {followup_response}")
+                        print(f"  Follow-Up Response BT: {followup_response_bt}")
 
                     next_questions.append(next_q)  # Collect the generated questions for the next round
                     next_answers.append(followup_response)
@@ -217,6 +227,7 @@ def main():
                 current_questions = next_questions
                 current_answers = next_answers
                 turn_counter += 1  # Increment the turn counter
+                question_counter=1
 
             # Save the generated multiturn questions and answers
             data["multiturn"] = multiturn
