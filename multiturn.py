@@ -6,10 +6,9 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 
 MODEL_ID = "Qwen/Qwen2.5-3B-Instruct"
 
-
-# =========================================================
+# =========================
 # LOAD PROMPTS
-# =========================================================
+# =========================
 def load_prompt(path, key):
     with open(path, "r", encoding="utf-8") as f:
         prompts = json.load(f)
@@ -17,14 +16,18 @@ def load_prompt(path, key):
         raise KeyError(f"Prompt key '{key}' not found")
     return prompts[key]
 
-
-# =========================================================
-# ANSWER ONE QUESTION (SRC or BT)
-# =========================================================
-def answer_one(tokenizer, model, qa_prompt, sentence, question):
+def generate_response(
+    tokenizer,
+    model,
+    qa_prompt,
+    text,
+    question
+):
+    print(f"Generating response for question: {question}")
+    
     prompt = (
         qa_prompt
-        .replace("{{sentence}}", sentence)
+        .replace("{{sentence}}", text)
         .replace("{{questions}}", json.dumps([question], ensure_ascii=False))
     )
 
@@ -42,31 +45,24 @@ def answer_one(tokenizer, model, qa_prompt, sentence, question):
     with torch.no_grad():
         outputs = model.generate(
             input_ids=inputs["input_ids"],
-            max_new_tokens=256,
+            max_new_tokens=128,
             do_sample=False,
             temperature=0.0,
-            eos_token_id=tokenizer.eos_token_id,
-            pad_token_id=tokenizer.pad_token_id
+            eos_token_id=tokenizer.eos_token_id
         )
 
-    text = tokenizer.decode(
+    response = tokenizer.decode(
         outputs[0][inputs["input_ids"].shape[-1]:],
         skip_special_tokens=True
     ).strip()
 
-    try:
-        parsed = json.loads(text)
-        if isinstance(parsed, list) and len(parsed) > 0:
-            return parsed[0]
-    except:
-        pass
-
-    return "No Answer"
+    print(f"Generated response: {response}")
+    return response
 
 
-# =========================================================
+# =========================
 # GENERATE FOLLOW-UP QUESTION (SRC ONLY)
-# =========================================================
+# =========================
 def generate_followup_question(
     tokenizer,
     model,
@@ -75,6 +71,8 @@ def generate_followup_question(
     prev_question,
     prev_answer
 ):
+    print(f"Generating follow-up for: Q: {prev_question} A: {prev_answer}")
+    
     prompt = (
         followup_prompt
         .replace("{{text}}", text)
@@ -107,12 +105,12 @@ def generate_followup_question(
         skip_special_tokens=True
     ).strip()
 
+    print(f"Generated follow-up question: {q}")
     return q
 
-
-# =========================================================
+# =========================
 # MAIN
-# =========================================================
+# =========================
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input_path", required=True)
@@ -124,7 +122,7 @@ def main():
 
     # ---- load prompts
     qa_prompt = load_prompt(args.prompt_path, "qa_prompt")
-    followup_prompt = load_prompt(args.prompt_path, "qg_prompt")
+    followup_prompt = load_prompt(args.prompt_path, "followup_prompt")
 
     # ---- model
     tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
@@ -147,57 +145,84 @@ def main():
             src = data.get("src")
             bt = data.get("bt")
             questions = data.get("questions_src")
+            answers_src = data.get("answers_src")
+            entry_id = data.get("id")  # Get entry id
 
-            if not src or not bt or not questions:
+            if not src or not bt or not questions or not answers_src or not entry_id:
                 continue
 
-            q = questions[0]
-            multiturn = []
+            multiturn = {}
 
             if args.debug:
                 print(f"\n[MULTITURN] ID={data['id']}")
 
-            for turn in range(1, args.max_turns + 1):
+            # =========================
+            # TURN 1: Generate follow-up questions for each question-answer pair
+            # =========================
+            current_questions = questions
+            current_answers = answers_src
+            turn_counter = 1
+            question_counter = 1  # Initialize question counter for each entry
 
-                a_src = answer_one(tokenizer, model, qa_prompt, src, q)
-                a_bt  = answer_one(tokenizer, model, qa_prompt, bt,  q)
+            while turn_counter <= args.max_turns:
+                next_questions = []
+                next_answers=[]
+                multiturn[f"turn_{turn_counter}"] = []
 
-                multiturn.append({
-                    "turn": turn,
-                    "question": q,
-                    "answer_src": a_src,
-                    "answer_bt": a_bt
-                })
+                # For each question-answer pair, generate a follow-up question and its response
+                for q, a in zip(current_questions, current_answers):
+                    question_id = f"{entry_id}.{question_counter}"  # Unique ID for each question
 
-                if args.debug:
-                    print(f" Turn {turn}")
-                    print(f"  Q: {q}")
-                    print(f"  A_SRC: {a_src}")
-                    print(f"  A_BT : {a_bt}")
+    
 
-                # STOP CONDITIONS
-                if a_src == "No Answer":
-                    break
+                    # Generate the follow-up question for the answer
+                    next_q = generate_followup_question(
+                        tokenizer,
+                        model,
+                        followup_prompt,
+                        text=src,
+                        prev_question=q,
+                        prev_answer=a
+                    )
+                    followup_response = generate_response(
+                        tokenizer,
+                        model,
+                        qa_prompt,
+                        text=src,
+                        question=next_q
+                    )
 
-                next_q = generate_followup_question(
-                    tokenizer,
-                    model,
-                    followup_prompt,
-                    text=src,
-                    prev_question=q,
-                    prev_answer=a_src
-                )
+                    # Add current question-answer pair with the follow-up question and its response
+                    if next_q.endswith("?"):
+                        multiturn[f"turn_{turn_counter}"].append({
+                            "question_id": question_id,  # Unique question ID
+                            "question": q,
+                            "answer_src": a,
+                            "follow_up_question": next_q,
+                            "follow_up_response": followup_response  # Same response from previous turn
+                        })
 
-                if not next_q.endswith("?"):
-                    break
+                    if args.debug:
+                        print(f" Turn {turn_counter}")
+                        print(f"  Q: {q}")
+                        print(f"  A_SRC: {a}")
+                        print(f"  Follow-Up Q: {next_q}")
+                        print(f"  Follow-Up Response: {followup_response}")
 
-                q = next_q
+                    next_questions.append(next_q)  # Collect the generated questions for the next round
+                    next_answers.append(followup_response)
+                    question_counter += 1  # Increment question ID for the next question
 
+                # Prepare for the next round (use the new follow-up questions)
+                current_questions = next_questions
+                current_answers = next_answers
+                turn_counter += 1  # Increment the turn counter
+
+            # Save the generated multiturn questions and answers
             data["multiturn"] = multiturn
             f_out.write(json.dumps(data, ensure_ascii=False) + "\n")
 
     print("✅ MULTI-TURN ASKQE COMPLETED")
-
 
 if __name__ == "__main__":
     main()
