@@ -36,20 +36,25 @@ def yesno_qa(tokenizer, model, prompt_template, sentence, question):
         {"role": "user", "content": prompt},
     ]
 
-    input_ids = tokenizer.apply_chat_template(
-        messages,
-        add_generation_prompt=True,
-        return_tensors="pt",
-    ).to(model.device)
+    inputs = tokenizer.apply_chat_template(
+      messages,
+      add_generation_prompt=True,
+      return_tensors="pt",
+    )
+
+    inputs = {k: v.to(model.device) for k, v in inputs.items()}
 
     with torch.no_grad():
-        outputs = model.generate(
-            input_ids=input_ids,
-            max_new_tokens=8,
-            eos_token_id=tokenizer.eos_token_id
-        )
+      outputs = model.generate(
+          input_ids=inputs["input_ids"],
+          attention_mask=inputs.get("attention_mask"),
+          max_new_tokens=8,
+          eos_token_id=tokenizer.eos_token_id,
+          pad_token_id=tokenizer.pad_token_id,
+          do_sample=False
+      )
 
-    response = outputs[0][input_ids.shape[-1]:]
+    response = outputs[0][inputs["input_ids"].shape[-1]:]
     answer = tokenizer.decode(response, skip_special_tokens=True).strip()
 
     # normalizzazione hard

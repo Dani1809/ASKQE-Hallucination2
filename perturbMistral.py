@@ -245,21 +245,24 @@ def main():
                 padding=True
             ).to(device)
 
-            print(f"[DEBUG] Input tokens shape: {inputs.shape}")
+            print(f"[DEBUG] input_ids shape: {inputs['input_ids'].shape}")
 
             with torch.no_grad():
                 outputs = model.generate(
-                    input_ids=inputs,
-                    attention_mask=(inputs != tokenizer.pad_token_id),
-                    max_new_tokens=200,
-                    eos_token_id=tokenizer.eos_token_id,
-                    pad_token_id=tokenizer.pad_token_id,
-                    do_sample=True,
-                    temperature=0.25,
-                    top_p=0.85
+                input_ids=inputs["input_ids"],
+                attention_mask=inputs["attention_mask"],
+                max_new_tokens=200,
+                eos_token_id=tokenizer.eos_token_id,
+                pad_token_id=tokenizer.pad_token_id,
+                do_sample=True,
+                temperature=0.25,
+                top_p=0.85
                 )
 
-                response = outputs[0][inputs.shape[-1]:]
+
+                prompt_len = inputs["input_ids"].shape[-1]
+                response = outputs[0][prompt_len:]
+
                 generated_text = tokenizer.decode(
                     response,
                     skip_special_tokens=True

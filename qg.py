@@ -67,8 +67,8 @@ def main():
         for line_idx, line in enumerate(f_in, start=1):
             data = json.loads(line)
 
-            bt_field = "bt"
-            sentence = data.get(bt_field)
+            src_field = "src"
+            sentence = data.get(src_field)
 
 
 
@@ -90,7 +90,10 @@ def main():
                 {"role": "user", "content": prompt},
             ]
 
-            input_ids = tokenizer.apply_chat_template(
+           # =========================
+            # TOKENIZE (CHAT TEMPLATE)
+            # =========================
+            inputs = tokenizer.apply_chat_template(
                 messages,
                 add_generation_prompt=True,
                 return_tensors="pt"
@@ -101,15 +104,24 @@ def main():
             # =========================
             with torch.no_grad():
                 outputs = model.generate(
-                    input_ids=input_ids,
+                    input_ids=inputs["input_ids"],
+                    attention_mask=inputs.get("attention_mask"),
                     max_new_tokens=256,
-                    eos_token_id=tokenizer.eos_token_id
+                    eos_token_id=tokenizer.eos_token_id,
+                    pad_token_id=tokenizer.eos_token_id
                 )
 
             # =========================
             # DECODE
             # =========================
-            response = outputs[0][input_ids.shape[-1]:]
+            prompt_len = inputs["input_ids"].shape[-1]
+            response = outputs[0][prompt_len:]
+
+            raw_output = tokenizer.decode(
+                response,
+                skip_special_tokens=True
+            ).strip()
+
             raw_output = tokenizer.decode(
                 response,
                 skip_special_tokens=True
@@ -154,7 +166,7 @@ def main():
             # =========================
             # SAVE (ALWAYS)
             # =========================
-            data["questions_bt"] = questions
+            data["questions_src"] = questions
             f_out.write(json.dumps(data, ensure_ascii=False) + "\n")
 
             print("[DEBUG] Record written to file")
