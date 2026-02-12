@@ -1,11 +1,23 @@
 {
   "qa_prompt": "Task: You will be given an English sentence and a list of relevant questions. Your goal is to generate a list of answers to the questions based on the sentence. If there is no answer in the sentence answer with 'No answer'. Output only the list of answers in Python list format without giving any additional explanation. Do not output as code format (```python```).\n\n*** Example Starts ***\nSentence: and does this pain move from your chest?\nQuestions: [\"What moves from your chest?\", \"Where does the pain move from?\", \"When did the pain start?\"]\nAnswers: [\"The pain\", \"Your chest\", \"No Answer\"]\n\nSentence: Diabetes mellitus (784, 10.9%), chronic lung disease (656, 9.2%), and cardiovascular disease (647, 9.0%) were the most frequently reported conditions among all cases.\nQuestions: [\"What were the most frequently reported conditions among all cases?\", \"Which conditions were reported with a frequency of 10.9%, 9.2%, and 9.0%, respectively?\", \"What percentage of cases reported diabetes mellitus?\", \"What percentage of cases reported chronic lung disease?\", \"What percentage of cases reported cardiovascular disease?\"]\nAnswers: [\"Diabetes mellitus, chronic lung disease, and cardiovascular disease\", \"Diabetes mellitus (10.9%), chronic lung disease (9.2%), and cardiovascular disease (9.0%)\", \"10.9%\", \"9.2%\", \"9.0%\"]\n*** Example Ends ***\n\nSentence: {{sentence}}\nQuestions: {{questions}}\nAnswers:",
-  
-  "qg_prompt":  "Task: Generate verification questions as a JSON array.\n\nFormat (STRICT): [\"Question 1?\", \"Question 2?\", \"Question 3?\"]\n\nRules:\n1. Generate 3-5 questions\n2. Each question answerable from sentence text only\n3. Use factual question words (what, who, where, when, which)\n4. Output ONLY the JSON array\n5. No markdown code blocks\n6. No explanations\n\nSentence: {{sentence}}\n\nJSON array:",
 
+  "qg_prompt": "Task: You will be given an English sentence. Your goal is to generate a list of relevant questions based on the sentence. Output only the list of questions in Python list format without giving any additional explanation.
+  
+  *** Example Starts ***
+  Sentence: It is not yet known whether the severity or level of control of underlying health conditions affects the risk for severe disease associated with COVID-19.
+  Questions: [\"What is not yet known?\", \"What might affect the risk for severe disease associated with COVID-19?\", \"What is associated with severe disease?\", \"What conditions are mentioned in the sentence?\", \"What is the disease mentioned in the sentence?\"]
+  
+  Sentence: The number of accessory proteins and their function is unique depending on the specific coronavirus.
+  Questions: [\"What is unique depending on the specific coronavirus?\", \"What is unique about the function of accessory proteins?\"]
+  *** Example Ends ***
+  
+  Sentence: {{sentence}}
+  Questions: ",
+  
   "qa_prompt_check": "You are given a sentence and a YES/NO question.\n\nSentence:\n{{sentence}}\n\nQuestion:\n{{question}}\n\nAnswer the question using ONLY the information in the sentence.\nAnswer with:\n- \"Yes\" if the statement is explicitly supported,\n- \"No\" if it is contradicted or not supported or if the information is not mentioned.\n\nDo not add explanations.\nAnswer with a single token.\nAnswer:",
 
   "qg_prompt_check": "You are given:\n- a question\n- an answer\n\nYour task is to generate YES/NO verification questions\nto check whether the information in the answer\nis explicitly supported by the ORIGINAL source text.\n\nRules:\n- Output MUST be a valid JSON array: [\"Question 1?\", \"Question 2?\", \"Question 3?\"]\n- Generate 1 to 3 YES/NO questions.\n- Each question must be answerable with YES or NO.\n- Each question must verify ONE specific fact in the answer.\n- Do NOT ask open-ended questions.\n- Do NOT add explanations.\n- Output ONLY a JSON array of strings.\n\nExamples:\nQuestion: \"What symptoms does the patient have?\"\nAnswer: \"fever and headache\"\n→ \"The patient has fever and headache?\"\n\nQuestion: \"Which university does he attend?\"\nAnswer: \"University of Tokyo\"\n→ [\"Does he attend the University of Tokyo?\"]\n\nQuestion: {{question}}\nAnswer: {{answer}}\n\nVerification questions:",
  
   "followup_prompt": "Task: Generate ONE follow-up question for a multi-turn question answering process.\n\nYou are given:\n- the full original text\n- the previous question\n- the answer to the previous question (derived from the text)\n\nRules:\n- The follow-up question MUST be answerable using ONLY the given text.\n- The question MUST logically follow from the previous question and answer.\n- Do NOT introduce new entities, facts, or assumptions.\n- Do NOT repeat the previous question.\n- Ask about a different aspect, detail, or consequence explicitly mentioned in the text.\n- If no valid follow-up question can be generated, output exactly: NO_FOLLOWUP\n- Output ONLY the question text. No explanations.\n\nText:\n{{text}}\n\nPrevious question:\n{{prev_question}}\n\nPrevious answer:\n{{prev_answer}}\n\nFollow-up question:"
+
 }
