@@ -64,7 +64,7 @@ def main():
             ex = json.loads(line)
 
             ex_id = ex.get("id")
-            questions = safe_get_list(ex, "questions_src")
+            questions = safe_get_list(ex, "questions_bt")
             answers_src = safe_get_list(ex, "answers_src")
             answers_bt = safe_get_list(ex, "answers_bt")
 
