@@ -2,76 +2,92 @@ import json
 import argparse
 
 
-def compute_metrics(input_path, no_answer="No Answer"):
-    total_questions = 0
+def norm_str(x):
+    return x.strip().casefold() if isinstance(x, str) else ""  # case-insensitive [web:277][web:280]
+
+
+def compute_metrics(input_path, yes_token="yes", no_token="no"):
+    # per-question (micro)
+    total_q = 0
     yes_count = 0
     no_count = 0
-    no_answer_count = 0
+
+    # per-sentence (macro / OR)
+    total_sent = 0
+    sent_with_no = 0
+
+    yes_token = yes_token.casefold()
+    no_token = no_token.casefold()
 
     with open(input_path, "r", encoding="utf-8") as f:
         for line in f:
+            if not line.strip():
+                continue
             data = json.loads(line)
 
             questions = data.get("contrastive_questions", [])
             answers = data.get("contrastive_answers_src", [])
 
+            if not isinstance(questions, list) or not isinstance(answers, list):
+                continue
             if not questions or not answers:
                 continue
 
-            # sicurezza: allinea lunghezze
             n = min(len(questions), len(answers))
-            questions = questions[:n]
             answers = answers[:n]
 
+            total_sent += 1
+            has_no = False
+
             for a in answers:
-                total_questions += 1
-                a_norm = a.strip().lower()
+                total_q += 1
+                a_norm = norm_str(a)
 
-                if a_norm == "yes":
+                if a_norm == yes_token:
                     yes_count += 1
-                elif a_norm == "no":
-                    no_count += 1
                 else:
-                    no_answer_count += 1
+                    # assumiamo che tutto il resto sia "no"
+                    no_count += 1
+                    has_no = True
 
-    # ===== METRICHE =====
-    chr_rate = no_count / total_questions if total_questions > 0 else 0.0
+            sent_with_no += int(has_no)
 
-    verified_den = yes_count + no_count
-    chr_verified = no_count / verified_den if verified_den > 0 else 0.0
-
-    chr_strict = (no_count + no_answer_count) / total_questions if total_questions > 0 else 0.0
+    chr_question = (no_count / total_q) if total_q > 0 else 0.0
+    chr_sentence = (sent_with_no / total_sent) if total_sent > 0 else 0.0
 
     return {
-        "total_questions": total_questions,
+        "total_questions": total_q,
         "yes": yes_count,
         "no": no_count,
-        "no_answer": no_answer_count,
-        "CHR": chr_rate,
-        "CHR_verified": chr_verified,
-        "CHR_strict": chr_strict
+        "total_sentences": total_sent,
+        "sentences_with_no": sent_with_no,
+        "CHR_question": chr_question,
+        "CHR_sentence": chr_sentence,
     }
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input_path", type=str, required=True,
-                        help="Path to JSONL with contrastive answers")
+                        help="Path to JSONL with contrastive_questions and contrastive_answers_src")
     args = parser.parse_args()
 
-    metrics = compute_metrics(args.input_path)
+    m = compute_metrics(args.input_path)
 
     print("\n====== CONTRASTIVE HALLUCINATION METRICS ======")
-    print(f"Total contrastive questions : {metrics['total_questions']}")
-    print(f"Yes                        : {metrics['yes']}")
-    print(f"No                         : {metrics['no']}")
-    print(f"No Answer                  : {metrics['no_answer']}")
+    print(f"Total contrastive questions : {m['total_questions']}")
+    print(f"Yes                        : {m['yes']}")
+    print(f"No                         : {m['no']}")
     print("---------------------------------------------")
-    print(f"CHR (No / All)             : {metrics['CHR']:.4f}")
-    print(f"CHR_verified (No / Y+N)    : {metrics['CHR_verified']:.4f}")
-    print(f"CHR_strict ((N+NA) / All)  : {metrics['CHR_strict']:.4f}")
+    print(f"Total sentences            : {m['total_sentences']}")
+    print(f"Sentences with >=1 'No'    : {m['sentences_with_no']}")
+    print("---------------------------------------------")
+    print(f"CHR_question (No / All Q)  : {m['CHR_question']:.4f}")
+    print(f"CHR_sentence (sent OR)     : {m['CHR_sentence']:.4f}")
     print("=============================================\n")
 
 
 if __name__ == "__main__":
     main()
+
+
