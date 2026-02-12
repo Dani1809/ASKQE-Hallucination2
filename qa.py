@@ -247,7 +247,7 @@ def main():
                 skipped += 1
                 continue
 
-            questions = data.get("questions_src")
+            questions = data.get("questions_bt")
             if not questions:
                 skipped += 1
                 continue
