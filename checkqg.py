@@ -63,7 +63,7 @@ def main():
         for line in f_in:
             data = json.loads(line)
 
-            questions = data.get("questions_src")
+            questions = data.get("questions_bt")
             answers = data.get("answers_bt")
 
             if not questions or not answers:
@@ -152,4 +152,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
