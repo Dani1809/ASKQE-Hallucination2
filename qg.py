@@ -67,7 +67,7 @@ def main():
         for line_idx, line in enumerate(f_in, start=1):
             data = json.loads(line)
 
-            src_field = "src"
+            src_field = "bt"
             sentence = data.get(src_field)
 
 
@@ -166,7 +166,7 @@ def main():
             # =========================
             # SAVE (ALWAYS)
             # =========================
-            data["questions_src"] = questions
+            data["questions_bt"] = questions
             f_out.write(json.dumps(data, ensure_ascii=False) + "\n")
 
             print("[DEBUG] Record written to file")
@@ -176,4 +176,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
