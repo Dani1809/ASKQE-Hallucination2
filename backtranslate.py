@@ -111,15 +111,15 @@ def main():
     parser = argparse.ArgumentParser(description="Back-translation using NLLB")
     parser.add_argument("--input_path", type=str, required=True)
     parser.add_argument("--output_path", type=str, required=True)
-    parser.add_argument("--source_language", type=str, default="ita",
-                        help="Source language (default: ita)")
-    parser.add_argument("--target_language", type=str, default="eng",
-                        help="Target language (default: eng)")
+    parser.add_argument("--source_language", type=str, default="es",
+                        help="Source language (default: es)")
+    parser.add_argument("--target_language", type=str, default="en",
+                        help="Target language (default: en)")
     parser.add_argument(
         "--input_field",
         type=str,
-        default="pert_mt",
-        help="Field to back-translate (default: pert_mt)"
+        default="pert_es",
+        help="Field to back-translate (default: pert_es)"
     )
     args = parser.parse_args()
 
@@ -178,3 +178,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
