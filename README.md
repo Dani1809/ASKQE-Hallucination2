@@ -21,7 +21,7 @@ The framework detects hallucinations through three complementary approaches:
 
 ## Dataset
 
-We evaluate on 50 sentences from the ContraTICo dataset with expansion_impact perturbations. Source language is English and target language is Spanish. The perturbation type adds modifiers, qualifiers, or new information.
+We evaluate on 50 sentences from the ContraTICo dataset with expansion(impact) perturbations. Source language is English and target language is Spanish. The perturbation type adds modifiers, qualifiers, or new information.
 
 ---
 
