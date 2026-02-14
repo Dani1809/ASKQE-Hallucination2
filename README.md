@@ -15,7 +15,7 @@ The framework detects hallucinations through three complementary approaches:
 
 2. BERTScore Validation: For answer pairs where both source and backtranslation provide responses, compute semantic similarity. Low scores indicate semantic divergence likely caused by hallucinations.
 
-3. Yes/No Verification: Generate binary verification questions that decompose backtranslation answers into more specific factual claims. Ask the source to verify each claim. A "No" answer from the source to a claim supported by the backtranslation unambiguously identifies hallucinated content.
+3. Yes/No Verification: Generate binary verification questions that decompose backtranslation answers into more specific factual claims. Ask the source to verify each claim. A "No" answer from the source to a claim supported by the backtranslation identifies hallucinated content.
 
 ---
 
@@ -23,46 +23,66 @@ The framework detects hallucinations through three complementary approaches:
 
 We evaluate on 50 sentences from the ContraTICo dataset with expansion_impact perturbations. Source language is English and target language is Spanish. The perturbation type adds modifiers, qualifiers, or new information.
 
-Example perturbation:
-Source: "We have the opportunity to escalate the data extraction to twice weekly if needed."
-Perturbed MT: "Tenemos la oportunidad de aumentar la extracción de datos al doble por semana en caso de ser necesario y reducir costos."
-Backtranslation: "We have the opportunity to double data extraction per week if necessary and reduce costs."
-
 ---
 
 ## Models Used
 
 Backtranslation: facebook/nllb-200-distilled-600M
+
 Question Generation and QA: Qwen/Qwen2.5-7B-Instruct
+
 Semantic Similarity: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
 
 ---
 
 ## Project Structure
 
-ASKQE-Hallucination2/
+ASKQE-Hallucination2
+
 ├── data/
+
 │   ├── expansion_impact.jsonl           (original ContraTICo data)
+
 │   ├── contratico_expansion.jsonl       (sampled 50 sentences)
+
 │   ├── contratico_expansion_bt.jsonl    (backtranslated)
+
 │   ├── contratico_expansion_bt_qg.jsonl (with questions)
+
 │   ├── contratico_expansion_bt_qg_qa.jsonl (with answers)
+
 │   ├── contratico_expansion_bt_qg_qa_checkqg.jsonl (with verification questions)
+
 │   ├── contratico_expansion_bt_qg_qa_checkqg_checkqa.jsonl (with verification answers)
+
 │   ├── mismatches.jsonl                 (BERTScore flagged pairs)
+
 │   └── contrastive_src_no_bt_yes.jsonl  (Yes/No detections)
+
 ├── sampleSentences.py       (sample N sentences from dataset)
+
 ├── normalize_contratico.py  (normalize ContraTICo format)
+
 ├── backtranslate.py        (backtranslation with NLLB)
+
 ├── qg.py                   (question generation from BT)
+
 ├── qa.py                   (answer questions on SRC and BT)
+
 ├── checkqg.py              (generate Yes/No verification questions)
+
 ├── checkqa.py              (answer verification questions)
+
 ├── ucr.py                  (compute UCR metrics)
+
 ├── simScores.py            (compute BERTScore)
+
 ├── compute_contrastive_metrics.py (aggregate Yes/No results)
+
 ├── prompt.json             (prompt templates)
+
 ├── data.json               (configuration)
+
 └── README.md
 
 ---
