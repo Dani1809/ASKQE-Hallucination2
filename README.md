@@ -37,103 +37,98 @@ Semantic Similarity: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
 
 ## Project Structure
 
+```
 ASKQE-Hallucination2
-
 ├── data/
-
 │   ├── expansion_impact.jsonl           (original ContraTICo data)
-
 │   ├── contratico_expansion.jsonl       (sampled 50 sentences)
-
 │   ├── contratico_expansion_bt.jsonl    (backtranslated)
-
 │   ├── contratico_expansion_bt_qg.jsonl (with questions)
-
 │   ├── contratico_expansion_bt_qg_qa.jsonl (with answers)
-
 │   ├── contratico_expansion_bt_qg_qa_checkqg.jsonl (with verification questions)
-
 │   ├── contratico_expansion_bt_qg_qa_checkqg_checkqa.jsonl (with verification answers)
-
 │   ├── mismatches.jsonl                 (BERTScore flagged pairs)
-
 │   └── contrastive_src_no_bt_yes.jsonl  (Yes/No detections)
-
 ├── sampleSentences.py       (sample N sentences from dataset)
-
 ├── normalize_contratico.py  (normalize ContraTICo format)
-
 ├── backtranslate.py        (backtranslation with NLLB)
-
 ├── qg.py                   (question generation from BT)
-
 ├── qa.py                   (answer questions on SRC and BT)
-
 ├── checkqg.py              (generate Yes/No verification questions)
-
 ├── checkqa.py              (answer verification questions)
-
 ├── ucr.py                  (compute UCR metrics)
-
 ├── simScores.py            (compute BERTScore)
-
 ├── compute_contrastive_metrics.py (aggregate Yes/No results)
-
 ├── prompt.json             (prompt templates)
-
 ├── data.json               (configuration)
-
 └── README.md
+```
 
 ---
 
 ## Usage
 
 Clone the repository:
+```
 git clone https://github.com/Dani1809/ASKQE-Hallucination2.git
 cd ASKQE-Hallucination2
+```
 
 Step 1 - Sample 50 sentences from ContraTICo:
+```
 python sampleSentences.py --input_path data/expansion_impact.jsonl --output_path data/expansion_impact_50.jsonl --n 50
+```
 
 Step 2 - Normalize ContraTICo format:
+```
 python normalize_contratico.py --input_path data/expansion_impact_50.jsonl --output_path data/contratico_expansion.jsonl
+```
 
 Step 3 - Backtranslation:
+```
 python backtranslate.py --input_path data/contratico_expansion.jsonl --output_path data/contratico_expansion_bt.jsonl --source_language spa --target_language eng
+```
 
 Step 4 - Question Generation from Backtranslation:
+```
 python qg.py --input_path data/contratico_expansion_bt.jsonl --output_path data/contratico_expansion_bt_qg.jsonl --prompt_path prompt.json --prompt_key qg_prompt
+```
 
 Step 5 - Question Answering (answer each question using both source and backtranslation):
+```
 python qa.py --input_path data/contratico_expansion_bt_qg.jsonl --output_path data/contratico_expansion_bt_qg_qa.jsonl --prompt_path prompt.json --prompt_key qa_prompt
-
+```
 The QA model is explicitly instructed to return "No Answer" when information is absent.
 
+
 Step 6 - Generate Yes/No Verification Questions:
+```
 python checkqg.py --input_path data/contratico_expansion_bt_qg_qa.jsonl --output_path data/contratico_expansion_bt_qg_qa_checkqg.jsonl --prompt_path prompt.json --prompt_key qg_prompt_check
+```
 
 Step 7 - Answer Verification Questions on Source:
+```
 python checkqa.py --input_path data/contratico_expansion_bt_qg_qa_checkqg.jsonl --output_path data/contratico_expansion_bt_qg_qa_checkqg_checkqa.jsonl --prompt_path prompt.json --prompt_key qa_prompt_check
+```
 
 ---
 
 ## Evaluation
 
 Step 8 - Compute UCR:
+```
 python ucr.py --input_path data/contratico_expansion_bt_qg_qa.jsonl
-
-Output: Questions flagged: 20/165 (12.12%), Sentences flagged: 16/50 (32.00%)
+```
 
 Step 9 - Compute BERTScore and flag mismatches:
+```
 python simScores.py --input_path data/contratico_expansion_bt_qg_qa.jsonl --output_path data/mismatches.jsonl --tau 0.6 --only_mismatches --include_context
-
-Output: Pairs with similarity < 0.6 saved to mismatches.jsonl for manual inspection.
+```
 
 Step 10 - Aggregate Yes/No Verification Results:
+```
 python compute_contrastive_metrics.py --input_path data/contratico_expansion_bt_qg_qa_checkqg_checkqa.jsonl --dump_path data/contrastive_src_no_bt_yes.jsonl
-
-Output: Sentences with SRC=No and BT=Yes (hallucinations detected). Detection rate: >50% (27/48 sentences).
+```
 
 ---
 
