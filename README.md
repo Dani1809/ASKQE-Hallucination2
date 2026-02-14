@@ -13,11 +13,9 @@ The framework detects hallucinations through three complementary approaches:
 
 1. UCR (Unanswerable Content Rate): Generate questions from the backtranslation and answer them using both source and backtranslation. If the backtranslation can answer but the source cannot (returns "No Answer"), the information must have been added during translation.
 
-2. BERTScore Validation: For answer pairs where both source and backtranslation provide responses, compute semantic similarity. Low scores (below threshold τ = 0.6) indicate semantic divergence likely caused by hallucinations.
+2. BERTScore Validation: For answer pairs where both source and backtranslation provide responses, compute semantic similarity. Low scores indicate semantic divergence likely caused by hallucinations.
 
-3. Yes/No Verification: Generate binary verification questions that decompose backtranslation answers into atomic factual claims. Ask the source to verify each claim. A "No" answer from the source to a claim supported by the backtranslation unambiguously identifies hallucinated content.
-
-The Yes/No verification approach achieves the highest detection rates by targeting atomic facts at finer granularity, making hallucination detection more likely even for subtle modifiers (e.g., "fever" → "high fever").
+3. Yes/No Verification: Generate binary verification questions that decompose backtranslation answers into more specific factual claims. Ask the source to verify each claim. A "No" answer from the source to a claim supported by the backtranslation unambiguously identifies hallucinated content.
 
 ---
 
