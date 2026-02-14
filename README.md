@@ -5,10 +5,6 @@
 
 AskQE-Hallucination inverts the standard AskQE paradigm to explicitly detect hallucinations introduced during machine translation. While the original AskQE framework generates questions from the source text and evaluates whether information is preserved in the backtranslation, this extension generates questions from the backtranslation itself and validates whether the queried information is supported by the source.
 
-This inversion addresses a critical limitation: when translations introduce facts not present in the source (hallucinations), standard QA-based evaluation may fail to detect them if backtranslation propagates these errors. By grounding questions in the backtranslated output and validating them against the source, the framework identifies content that appears in the backtranslation but lacks grounding in the original text.
-
-The framework is particularly effective at detecting expansion_impact perturbations, where translations add modifiers, qualifiers, or entirely new information not present in the source.
-
 ---
 
 ## Core Idea
