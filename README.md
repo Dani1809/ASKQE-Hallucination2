@@ -125,41 +125,8 @@ python compute_contrastive_metrics.py --input_path data/contratico_expansion_bt_
 
 ---
 
-## Results
-
-On 50 ContraTICo sentences with expansion_impact perturbation:
-
-Method | Questions Detected | Sentences Detected
-UCR | 20/165 (12.12%) | 16/50 (32.00%)
-BERTScore < 0.6 | — | (flagged for inspection)
-Yes/No Verification | 37/162 (22.84%) | 27/48 (56.25%)
-
-The Yes/No verification approach achieves the highest detection rate by targeting atomic facts, making it effective even for subtle semantic shifts.
-
----
-
-## Example
-
-Source: "The fever started two days ago."
-Perturbed MT: "La fiebre alta empezó hace dos días."
-Backtranslation: "The high fever started two days ago."
-
-Question from BT: "What is the symptom mentioned?"
-BT Answer: "High fever"
-Source Answer: "The fever"
-
-Verification Question: "Is the symptom high fever?"
-BT Answer: "Yes"
-Source Answer: "No"
-
-Result: Hallucination detected - The modifier "high" is not supported by the source.
-
----
-
 ## Contribution
 
 This extension provides a complementary perspective to standard AskQE:
 Standard AskQE measures information preservation (source → BT)
 AskQE-Hallucination measures information addition (BT → source validation)
-
-Together, they enable comprehensive quality estimation covering both omission and hallucination errors.
