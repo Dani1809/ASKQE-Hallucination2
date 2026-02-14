@@ -67,6 +67,14 @@ ASKQE-Hallucination2
 
 ## Usage
 
+Clone the repository:
+```
+git clone https://github.com/Dani1809/ASKQE-Hallucination2.git
+```
+```
+cd ASKQE-Hallucination2
+```
+
 Step 1 - Sample 50 sentences from ContraTICo:
 ```
 python sampleSentences.py --input_path data/expansion_impact.jsonl --output_path data/expansion_impact_50.jsonl --n 50
