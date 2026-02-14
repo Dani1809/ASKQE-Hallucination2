@@ -60,7 +60,6 @@ ASKQE-Hallucination2
 ├── simScores.py                                                #compute BERTScore
 ├── compute_contrastive_metrics.py                              #compute Yes/No results
 ├── prompt.json                                                 #prompt templates
-├── data.json                                                   #configuration
 └── README.md                                                   #this file
 ```
 
