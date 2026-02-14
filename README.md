@@ -40,28 +40,28 @@ Semantic Similarity: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
 ```
 ASKQE-Hallucination2
 ├── data/
-│   ├── expansion_impact.jsonl           (original ContraTICo data)
-│   ├── contratico_expansion.jsonl       (sampled 50 sentences)
-│   ├── contratico_expansion_bt.jsonl    (backtranslated)
-│   ├── contratico_expansion_bt_qg.jsonl (with questions)
-│   ├── contratico_expansion_bt_qg_qa.jsonl (with answers)
-│   ├── contratico_expansion_bt_qg_qa_checkqg.jsonl (with verification questions)
-│   ├── contratico_expansion_bt_qg_qa_checkqg_checkqa.jsonl (with verification answers)
-│   ├── mismatches.jsonl                 (BERTScore flagged pairs)
-│   └── contrastive_src_no_bt_yes.jsonl  (Yes/No detections)
-├── sampleSentences.py       (sample N sentences from dataset)
-├── normalize_contratico.py  (normalize ContraTICo format)
-├── backtranslate.py        (backtranslation with NLLB)
-├── qg.py                   (question generation from BT)
-├── qa.py                   (answer questions on SRC and BT)
-├── checkqg.py              (generate Yes/No verification questions)
-├── checkqa.py              (answer verification questions)
-├── ucr.py                  (compute UCR metrics)
-├── simScores.py            (compute BERTScore)
-├── compute_contrastive_metrics.py (aggregate Yes/No results)
-├── prompt.json             (prompt templates)
-├── data.json               (configuration)
-└── README.md
+│   ├── expansion_impact.jsonl                                  #original ContraTICo data
+│   ├── contratico_expansion.jsonl                              #sampled 50 sentences
+│   ├── contratico_expansion_bt.jsonl                           #backtranslated
+│   ├── contratico_expansion_bt_qg.jsonl                        #with questions
+│   ├── contratico_expansion_bt_qg_qa.jsonl                     #with answers
+│   ├── contratico_expansion_bt_qg_qa_checkqg.jsonl             #with verification questions
+│   ├── contratico_expansion_bt_qg_qa_checkqg_checkqa.jsonl     #with verification answers
+│   ├── mismatches.jsonl                                        #BERTScore flagged pairs
+│   └── contrastive_src_no_bt_yes.jsonl                         #Yes/No detections
+├── sampleSentences.py                                          #sample N sentences from dataset
+├── normalize_contratico.py                                     #normalize ContraTICo format
+├── backtranslate.py                                            #backtranslation with NLLB
+├── qg.py                                                       #question generation from BT
+├── qa.py                                                       #answer questions on SRC and BT
+├── checkqg.py                                                  #generate Yes/No verification questions
+├── checkqa.py                                                  #answer verification questions
+├── ucr.py                                                      #compute UCR metrics
+├── simScores.py                                                #compute BERTScore
+├── compute_contrastive_metrics.py                              #compute Yes/No results
+├── prompt.json                                                 #prompt templates
+├── data.json                                                   #configuration
+└── README.md                                                   #this file
 ```
 
 ---
